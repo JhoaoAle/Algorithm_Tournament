@@ -10,8 +10,8 @@ from architecture.db import init_db, DB_PATH
 # -----------------------------
 # CONFIG
 # -----------------------------
-MIN_ROUNDS = 300
-MAX_ROUNDS = 350
+MIN_ROUNDS = 350
+MAX_ROUNDS = 450
 
 PAYOFF = {
     ('C', 'C'): (30, 30),
