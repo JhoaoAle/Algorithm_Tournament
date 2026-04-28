@@ -25,6 +25,7 @@ STRATEGIES = {
     "karma": "algorithms.ds.karma",
     "nash": "algorithms.ds.nash",
     "weave": "algorithms.ds.weave",
+    "broken_chapulin": "algorithms.ds.broken_chapulin",
 
     "amast": "algorithms.p3.amast",
     "cagliostro": "algorithms.p3.cagliostro",
@@ -34,8 +35,7 @@ STRATEGIES = {
     "tit-for-tat": "algorithms.p3.tit-for-tat",
 
     "randy": "algorithms.randy",
-    "trigger": "algorithms.trigger",
-    
+    "trigger": "algorithms.trigger"
 }
 
 

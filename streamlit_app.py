@@ -14,7 +14,7 @@ from streamlit_autorefresh import st_autorefresh
 DB_PATH = Path("tournament_results/tournament.db")
 
 st.set_page_config(page_title="Algorithm Tournament", layout="wide")
-st_autorefresh(interval=5000, key="live_refresh")
+st_autorefresh(interval=15000, key="live_refresh")
 
 # -----------------------------
 # LOAD DATA
@@ -49,45 +49,45 @@ df = df[df["iteration"].isin(selected_iter)]
 # LEADERBOARD
 # -----------------------------
 st.header("Leaderboard")
+
+# --- TOTAL SCORE (existing) ---
 leader_a = df.groupby("competitor_a")["score_a"].sum()
 leader_b = df.groupby("competitor_b")["score_b"].sum()
 total = leader_a.add(leader_b, fill_value=0).sort_values(ascending=True)
 
+# --- AVERAGE SCORE PER ITERATION ---
+count_a = df.groupby("competitor_a")["score_a"].count()
+count_b = df.groupby("competitor_b")["score_b"].count()
+
+avg_a = leader_a / count_a
+avg_b = leader_b / count_b
+
+avg_total = avg_a.add(avg_b, fill_value=0).sort_values(ascending=True)
+
 # -----------------------------
-# FIGURE STYLE (DARK + CLEAN)
+# FIGURE WITH TWO LEADERBOARDS
 # -----------------------------
-fig, ax = plt.subplots(figsize=(10, 6))
-fig.patch.set_alpha(0)   # transparent figure background
-ax.set_facecolor("none") # transparent plot area
-colors = sns.color_palette("viridis", len(total))
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+fig.patch.set_alpha(0)
 
-bars = ax.barh(
-    total.index,
-    total.values,
-    color=colors,
-    edgecolor="none"
-)
+# --- LEFT: TOTAL ---
+ax1.set_facecolor("none")
+colors1 = sns.color_palette("viridis", len(total))
 
-ax.set_title("Strategy Leaderboard", color="white", fontsize=16, pad=15)
-ax.set_xlabel("Total Score", color="white")
-ax.tick_params(axis='x', colors='white')
-ax.tick_params(axis='y', colors='white')
+ax1.barh(total.index, total.values, color=colors1, edgecolor="none")
+ax1.set_title("Total Score", color="white")
+ax1.tick_params(colors="white")
 
-for spine in ax.spines.values():
-    spine.set_visible(False)
+# --- RIGHT: AVERAGE ---
+ax2.set_facecolor("none")
+colors2 = sns.color_palette("magma", len(avg_total))
 
-for bar in bars:
-    width = bar.get_width()
-    ax.text(
-        width + max(total.values) * 0.01,
-        bar.get_y() + bar.get_height()/2,
-        f"{width:,.0f}",
-        va="center",
-        color="white",
-        fontsize=10
-    )
+ax2.barh(avg_total.index, avg_total.values, color=colors2, edgecolor="none")
+ax2.set_title("Average Score per Iteration", color="white")
+ax2.tick_params(colors="white")
 
-st.pyplot(fig, transparent=True)
+plt.tight_layout()
+st.pyplot(fig)
 
 # -----------------------------
 # MATCHUPS HEATMAP
@@ -118,14 +118,36 @@ st.pyplot(fig)
 # PERFORMANCE OVER TIME
 # -----------------------------
 st.header("Performance Over Time")
-evolution = df.groupby(["iteration", "competitor_a"])["score_a"].sum().reset_index()
-pivot = evolution.pivot(
+
+# Group by iteration and competitors, and sum the scores for both competitors
+evolution = df.groupby(["iteration", "competitor_a", "competitor_b"])[["score_a", "score_b"]].sum().reset_index()
+
+# Pivot the dataframe for each competitor's performance using pivot_table to handle duplicates
+pivot_a = evolution.pivot_table(
     index="iteration",
     columns="competitor_a",
-    values="score_a"
-).fillna(0)
-pivot = pivot.rolling(window=2).mean()
-st.line_chart(pivot)
+    values="score_a",
+    aggfunc="sum",
+    fill_value=0
+)
+
+pivot_b = evolution.pivot_table(
+    index="iteration",
+    columns="competitor_b",
+    values="score_b",
+    aggfunc="sum",
+    fill_value=0
+)
+
+# Smooth the data with a rolling window of size 2
+pivot_a = pivot_a.rolling(window=2).mean()
+pivot_b = pivot_b.rolling(window=2).mean()
+
+# Combine the two pivot tables (competitor_a and competitor_b)
+combined_pivot = pivot_a.add(pivot_b, fill_value=0)
+
+# Plot the results for both competitors
+st.line_chart(combined_pivot)
 
 # -----------------------------
 # STRATEGY DOMINANCE SCORE

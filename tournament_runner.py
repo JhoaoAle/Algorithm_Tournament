@@ -1,13 +1,14 @@
 import time
 from architecture.tournament import run_single_iteration, init_db
+from report_generator import generate_report
 
 SLEEP_TIME = 5
+MAX_ITERATIONS = 100
 
 if __name__ == "__main__":
     init_db()
-    iteration = 1
 
-    while True:
+    for iteration in range(1, MAX_ITERATIONS + 1):
         print(f"Running iteration {iteration}")
 
         start = time.time()
@@ -16,5 +17,8 @@ if __name__ == "__main__":
 
         print(f"Iteration {iteration} finished in {duration:.2f}s")
 
-        iteration += 1
-        time.sleep(max(0, SLEEP_TIME - duration))
+        if iteration < MAX_ITERATIONS:
+            time.sleep(max(0, SLEEP_TIME - duration))
+
+    print("\nAll iterations complete. Generating final report...\n")
+    generate_report(MAX_ITERATIONS)
